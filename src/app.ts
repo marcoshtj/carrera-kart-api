@@ -15,16 +15,29 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:4200',           // Angular dev server
+  'https://carrerakart.netlify.app', // Site em produção
+  'http://localhost:3000',           // Para testes locais
+  'http://localhost:3001',           // Para testes locais
+  'http://localhost:5173',           // Vite dev server (caso use)
+  process.env.FRONTEND_URL           // URL personalizada do frontend
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: [
-    'http://localhost:4200',           // Angular dev server
-    'https://carrerakart.netlify.app', // Site em produção
-    'http://localhost:3000',           // Para testes locais
-    'http://localhost:3001',           // Para testes locais
-    'http://localhost:5173'            // Vite dev server (caso use)
-  ],
+  origin: (origin, callback) => {
+    // Permitir requisições sem origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Verificar se a origin está na lista ou é do Vercel
+    if (allowedOrigins.includes(origin) || /https:\/\/.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Não permitido pelo CORS'), false);
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 

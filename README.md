@@ -2,6 +2,30 @@
 
 API REST para sistema de classificação do campeonato Carrera Kart, desenvolvida com Node.js, TypeScript, Express e MongoDB.
 
+## 🚀 Deploy no Vercel
+
+### Pré-requisitos
+- Conta no [MongoDB Atlas](https://cloud.mongodb.com/)
+- Conta no [Vercel](https://vercel.com/)
+- Repositório no GitHub
+
+### Variáveis de Ambiente no Vercel
+
+Configure estas variáveis no dashboard do Vercel:
+
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/carrera-kart
+JWT_SECRET=sua_chave_jwt_super_segura_com_pelo_menos_32_caracteres
+JWT_EXPIRE=365d
+ADMIN_NAME=Admin Carrera Kart
+ADMIN_EMAIL=admin@carrerakart.com.br
+ADMIN_PASSWORD=sua_senha_admin_segura
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+FRONTEND_URL=https://carrerakart.netlify.app
+```
+
 ## 🚀 Funcionalidades
 
 - **Autenticação JWT** com middleware de autorização
