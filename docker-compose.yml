@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: carrera-kart-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: carrera-kart
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - carrera-kart-network
+
+  api:
+    build: .
+    container_name: carrera-kart-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/carrera-kart?authSource=admin
+      - JWT_SECRET=carrera-kart-super-secret-key-production
+      - ADMIN_NAME=Admin Carrera Kart
+      - ADMIN_EMAIL=admincarrerakart@carrerakart.com.br
+      - ADMIN_PASSWORD=12345678
+    depends_on:
+      - mongodb
+    networks:
+      - carrera-kart-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  carrera-kart-network:
+    driver: bridge
