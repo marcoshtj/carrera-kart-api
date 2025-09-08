@@ -70,24 +70,10 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// Middleware para garantir conexão em cada requisição (Vercel)
+// Inicializar apenas a configuração em produção (sem conexão global)
 if (process.env.NODE_ENV === 'production') {
-  app.use(async (req, res, next) => {
-    try {
-      await connectDB();
-      next();
-    } catch (error) {
-      console.error('Database connection error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro de conexão com banco de dados',
-        error: 'Database connection failed'
-      });
-    }
-  });
-  
-  // Inicializar apenas a configuração em produção
-  initializeApp().catch(console.error);
+  // Em produção, a conexão será feita por demanda via middleware
+  console.log('Running in production mode - database connections handled per request');
 } else {
   // Iniciar servidor em desenvolvimento
   startServer();

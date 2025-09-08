@@ -1,6 +1,6 @@
 {
   "name": "carrera-kart-api",
-  "version": "1.0.0",
+  "version": "1.0.0-rc01",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",

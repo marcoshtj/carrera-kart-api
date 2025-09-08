@@ -7,25 +7,51 @@ const mongooseOptions = {
   bufferMaxEntries: 0, // Disable mongoose buffering
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-  socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-  maxPoolSize: 10, // Maintain up to 10 socket connections
-  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-  family: 4 // Use IPv4, skip trying IPv6
+  serverSelectionTimeoutMS: 3000, // Reduzido para 3 segundos
+  socketTimeoutMS: 20000, // Reduzido para 20 segundos
+  connectTimeoutMS: 10000, // Timeout de conexão de 10 segundos
+  maxPoolSize: 5, // Reduzido para 5 conexões
+  maxIdleTimeMS: 10000, // Reduzido para 10 segundos de inatividade
+  family: 4, // Use IPv4, skip trying IPv6
+  retryWrites: true,
+  retryReads: true
 };
 
 // Cache da conexão para reutilizar em funções serverless
 let cachedConnection: typeof mongoose | null = null;
 
 export const connectDB = async (): Promise<typeof mongoose> => {
-  // Reutilizar conexão existente
-  if (cachedConnection && mongoose.connection.readyState === 1) {
+  // Reutilizar conexão existente se estiver conectada
+  const readyState = mongoose.connection.readyState as number;
+  if (cachedConnection && readyState === 1) {
     console.log('Using cached MongoDB connection');
     return cachedConnection;
   }
 
+  // Se está tentando conectar, aguardar um pouco
+  if (readyState === 2) {
+    console.log('MongoDB connection in progress, waiting...');
+    let attempts = 0;
+    while (attempts < 20 && mongoose.connection.readyState === 2) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    
+    const finalState = mongoose.connection.readyState as number;
+    if (finalState === 1) {
+      console.log('MongoDB connection established during wait');
+      return mongoose;
+    }
+  }
+
   try {
     console.log('Creating new MongoDB connection...');
+    
+    // Fechar conexão existente se estiver em estado inválido
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+    
     const conn = await mongoose.connect(config.mongodbUri, mongooseOptions);
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);

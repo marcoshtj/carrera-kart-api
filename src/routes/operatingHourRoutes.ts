@@ -1,10 +1,14 @@
 import express from 'express';
 import { OperatingHourController } from '../controllers/OperatingHourController';
 import { authenticate, authorize } from '../middleware/auth';
+import { ensureDBConnectionWithRetry } from '../middleware/database';
 import { UserRole } from '../types/user.types';
 
 const router = express.Router();
 const operatingHourController = new OperatingHourController();
+
+// Aplicar middleware de conexão DB em todas as rotas
+router.use(ensureDBConnectionWithRetry);
 
 /**
  * @route   GET /api/v1/operating-hours
