@@ -5,11 +5,11 @@ import { UserService } from './services/UserService';
 
 const initializeApp = async (): Promise<void> => {
   try {
-    // Conectar ao banco de dados
+    // Conectar ao banco de dados com retry
     await connectDB();
     console.log('✅ Banco de dados conectado');
 
-    // Criar usuário admin se não existir
+    // Criar usuário admin se não existir (apenas uma vez)
     const userService = new UserService();
     const adminCreated = await userService.createAdminUser({
       name: config.admin.name,
@@ -24,7 +24,10 @@ const initializeApp = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('❌ Erro ao inicializar aplicação:', error);
-    throw error;
+    // Em production, vamos tentar continuar mesmo com erro de admin
+    if (process.env.NODE_ENV !== 'production') {
+      throw error;
+    }
   }
 };
 
@@ -67,8 +70,23 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// Inicializar aplicação no Vercel
+// Middleware para garantir conexão em cada requisição (Vercel)
 if (process.env.NODE_ENV === 'production') {
+  app.use(async (req, res, next) => {
+    try {
+      await connectDB();
+      next();
+    } catch (error) {
+      console.error('Database connection error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro de conexão com banco de dados',
+        error: 'Database connection failed'
+      });
+    }
+  });
+  
+  // Inicializar apenas a configuração em produção
   initializeApp().catch(console.error);
 } else {
   // Iniciar servidor em desenvolvimento
