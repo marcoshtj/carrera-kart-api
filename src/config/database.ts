@@ -21,23 +21,43 @@ export const connectDB = async (): Promise<typeof mongoose> => {
   try {
     // Verificar se já está conectado
     const readyState = mongoose.connection.readyState as number;
+    console.log(`Current MongoDB readyState: ${readyState}`);
+    
     if (readyState === 1) {
       console.log('Using existing MongoDB connection');
       return mongoose;
     }
 
     console.log('Creating new MongoDB connection...');
+    console.log('MongoDB URI configured:', config.mongodbUri ? 'Yes' : 'No');
+    console.log('Environment:', process.env.NODE_ENV);
+    
+    // Log detalhado das variáveis de ambiente
+    console.log('🔍 MONGODB_URI from process.env:', process.env.MONGODB_URI ? 'Present' : 'Missing');
+    console.log('🔍 MONGODB_URI length:', process.env.MONGODB_URI ? process.env.MONGODB_URI.length : 0);
+    console.log('🔍 Config mongodbUri:', config.mongodbUri ? 'Present' : 'Missing');
+    console.log('🔍 Config mongodbUri length:', config.mongodbUri ? config.mongodbUri.length : 0);
+    console.log('🔍 URI starts with mongodb+srv:', config.mongodbUri ? config.mongodbUri.startsWith('mongodb+srv://') : false);
+    
+    if (!config.mongodbUri) {
+      throw new Error('MONGODB_URI is not configured');
+    }
     
     const conn = await mongoose.connect(config.mongodbUri, mongooseOptions);
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log(`Database name: ${conn.connection.name}`);
     
     // Armazenar a conexão no cache
     cachedConnection = conn;
     
     return conn;
   } catch (error) {
-    console.error('❌ Error connecting to MongoDB:', error);
+    console.error('❌ Error connecting to MongoDB:');
+    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Full error:', error);
+    
     throw new Error(`Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
