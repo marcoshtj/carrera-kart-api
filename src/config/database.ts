@@ -4,9 +4,6 @@ import { config } from './config';
 // Configuração otimizada para serverless
 const mongooseOptions = {
   bufferCommands: false, // Disable mongoose buffering
-  bufferMaxEntries: 0, // Disable mongoose buffering
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 3000, // Reduzido para 3 segundos
   socketTimeoutMS: 20000, // Reduzido para 20 segundos
   connectTimeoutMS: 10000, // Timeout de conexão de 10 segundos
