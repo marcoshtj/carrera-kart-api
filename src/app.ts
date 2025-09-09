@@ -73,7 +73,7 @@ app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Bem-vindo à API Carrera Kart',
-    version: '1.0.0',
+    version: '1.0.0rc01',
     documentation: '/api/v1/health'
   });
 });
