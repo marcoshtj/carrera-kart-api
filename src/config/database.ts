@@ -1,53 +1,32 @@
 import mongoose from 'mongoose';
 import { config } from './config';
 
-// Configuração otimizada para serverless
+// Configuração otimizada para serverless (mais agressiva)
 const mongooseOptions = {
   bufferCommands: false, // Disable mongoose buffering
-  serverSelectionTimeoutMS: 3000, // Reduzido para 3 segundos
-  socketTimeoutMS: 20000, // Reduzido para 20 segundos
-  connectTimeoutMS: 10000, // Timeout de conexão de 10 segundos
-  maxPoolSize: 5, // Reduzido para 5 conexões
-  maxIdleTimeMS: 10000, // Reduzido para 10 segundos de inatividade
-  family: 4, // Use IPv4, skip trying IPv6
-  retryWrites: true,
-  retryReads: true
+  serverSelectionTimeoutMS: 2000, // Reduzido para 2 segundos
+  socketTimeoutMS: 15000, // Reduzido para 15 segundos
+  connectTimeoutMS: 5000, // Timeout de conexão de 5 segundos
+  maxPoolSize: 3, // Reduzido para 3 conexões
+  maxIdleTimeMS: 5000, // Reduzido para 5 segundos de inatividade
+  family: 4, // Use IPv4
+  retryWrites: false, // Desabilitar retry de writes
+  retryReads: false // Desabilitar retry de reads
 };
 
 // Cache da conexão para reutilizar em funções serverless
 let cachedConnection: typeof mongoose | null = null;
 
 export const connectDB = async (): Promise<typeof mongoose> => {
-  // Reutilizar conexão existente se estiver conectada
-  const readyState = mongoose.connection.readyState as number;
-  if (cachedConnection && readyState === 1) {
-    console.log('Using cached MongoDB connection');
-    return cachedConnection;
-  }
-
-  // Se está tentando conectar, aguardar um pouco
-  if (readyState === 2) {
-    console.log('MongoDB connection in progress, waiting...');
-    let attempts = 0;
-    while (attempts < 20 && mongoose.connection.readyState === 2) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
-    
-    const finalState = mongoose.connection.readyState as number;
-    if (finalState === 1) {
-      console.log('MongoDB connection established during wait');
+  try {
+    // Verificar se já está conectado
+    const readyState = mongoose.connection.readyState as number;
+    if (readyState === 1) {
+      console.log('Using existing MongoDB connection');
       return mongoose;
     }
-  }
 
-  try {
     console.log('Creating new MongoDB connection...');
-    
-    // Fechar conexão existente se estiver em estado inválido
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
     
     const conn = await mongoose.connect(config.mongodbUri, mongooseOptions);
     
@@ -59,13 +38,7 @@ export const connectDB = async (): Promise<typeof mongoose> => {
     return conn;
   } catch (error) {
     console.error('❌ Error connecting to MongoDB:', error);
-    
-    // Em ambiente serverless, não sair do processo
-    if (process.env.NODE_ENV === 'production') {
-      throw error;
-    }
-    
-    process.exit(1);
+    throw new Error(`Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 

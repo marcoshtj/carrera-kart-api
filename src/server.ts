@@ -70,10 +70,14 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// Inicializar apenas a configuração em produção (sem conexão global)
+// Inicializar conectando ao DB em produção
 if (process.env.NODE_ENV === 'production') {
-  // Em produção, a conexão será feita por demanda via middleware
-  console.log('Running in production mode - database connections handled per request');
+  // Em produção, conectar ao DB na inicialização
+  connectDB().then(() => {
+    console.log('Production: Database connected on startup');
+  }).catch(error => {
+    console.error('Production: Database connection failed on startup:', error);
+  });
 } else {
   // Iniciar servidor em desenvolvimento
   startServer();

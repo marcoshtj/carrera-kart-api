@@ -4,10 +4,12 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 
 import { config } from './config/config';
 import routes from './routes';
 import { errorHandler, notFound } from './middleware/errorHandler';
+import { connectDB } from './config/database';
 
 const app = express();
 
@@ -63,6 +65,27 @@ app.use(compression());
 // Logging middleware
 if (config.nodeEnv !== 'test') {
   app.use(morgan('combined'));
+}
+
+// Middleware simples para verificar conexão DB em produção
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api/v1', async (req, res, next) => {
+    try {
+      const readyState = mongoose.connection.readyState as number;
+      if (readyState !== 1) {
+        console.log('Database not connected, attempting to connect...');
+        await connectDB();
+      }
+      next();
+    } catch (error) {
+      console.error('Database connection error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro de conexão com banco de dados',
+        error: 'Database unavailable'
+      });
+    }
+  });
 }
 
 // API routes
